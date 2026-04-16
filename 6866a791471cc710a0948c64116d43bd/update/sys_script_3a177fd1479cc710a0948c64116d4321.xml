@@ -12,7 +12,7 @@
         <change_fields>false</change_fields>
         <client_callable>false</client_callable>
         <collection>incident</collection>
-        <condition>current.short_description !== null &amp;&amp; current.short_description.strip().length</condition>
+        <condition/>
         <description/>
         <execute_function>false</execute_function>
         <filter_condition table="incident">short_descriptionISNOTEMPTY^EQ<item endquery="false" field="short_description" goto="false" newquery="false" operator="ISNOTEMPTY" or="false" value=""/>
@@ -29,9 +29,36 @@
         <rest_service_text/>
         <rest_variables/>
         <role_conditions/>
-        <script><![CDATA[(function executeRule(current, previous /*null when async*/) {
+        <script><![CDATA[(function executeRule(current, previous /*null when async*/ ) {
 
-	// Add your code here
+	const shortDescFieldName = 'short_description';
+    const incidentIds = [];
+    const shortDescValue = current.getValue(shortDescFieldName);
+
+    let incidentGR = new GlideRecord('incident');
+    incidentGR.addActiveQuery();
+    incidentGR.addQuery(shortDescFieldName, shortDescValue);
+    incidentGR.addQuery('sys_id', '!=', current.getUniqueValue());
+    incidentGR.query();
+
+    while (incidentGR.next()) {
+		incidentIds.push(incidentGR.getValue('number'));
+    }
+
+    if (incidentIds.length) {
+		const newLine = '<br> • ';
+		let message = gs.getMessage(
+			'custom_found_duplicate_incidents', 
+			[
+				incidentIds.length + '',
+				shortDescValue,
+				current.getElement('short_description').getLabel()
+			]
+		);
+		message += ` : ${newLine} ` + incidentIds.join(newLine);
+
+        gs.addErrorMessage(message);
+    }
 
 })(current, previous);]]></script>
         <sys_class_name>sys_script</sys_class_name>
@@ -40,7 +67,7 @@
         <sys_domain>global</sys_domain>
         <sys_domain_path>/</sys_domain_path>
         <sys_id>3a177fd1479cc710a0948c64116d4321</sys_id>
-        <sys_mod_count>0</sys_mod_count>
+        <sys_mod_count>16</sys_mod_count>
         <sys_name>Display duplicate incidents</sys_name>
         <sys_overrides/>
         <sys_package display_value="Server side handson practice" source="x_1982842_server_0">6866a791471cc710a0948c64116d43bd</sys_package>
@@ -48,7 +75,7 @@
         <sys_scope display_value="Server side handson practice">6866a791471cc710a0948c64116d43bd</sys_scope>
         <sys_update_name>sys_script_3a177fd1479cc710a0948c64116d4321</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-04-16 14:47:58</sys_updated_on>
+        <sys_updated_on>2026-04-16 16:34:36</sys_updated_on>
         <template/>
         <when>after</when>
     </sys_script>
